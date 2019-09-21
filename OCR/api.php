@@ -7,8 +7,12 @@ header("Content-Type: application/json");
 $serverMethod = $_SERVER['REQUEST_METHOD'];
 
 if($serverMethod == 'POST'){
-    
-    $target_dir = "uploads/";
+
+    $headerAuth = getallheaders();
+
+    if($headerAuth['Api-Key']=="d2ef76102412c7aea7b61484557518ef"){ 
+
+        $target_dir = "uploads/";
     $target_file = $target_dir . basename($_FILES["file"]["name"]);
     $uploadOk = 1;
     $imageFileType = strtolower(pathinfo($target_file,PATHINFO_EXTENSION));
@@ -176,6 +180,14 @@ if($serverMethod == 'POST'){
 	$engine = null;
 
     return;
+
+    }else {
+        http_response_code(400);
+        $response = array("responseType"=>"Error","response"=>"Invalid Api Key");
+        echo json_encode($response);
+        return;
+    }
+    
         
 }else {
     http_response_code(405);
