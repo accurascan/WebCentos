@@ -65,7 +65,7 @@
     	$card_type_id = 6;
 
     //image load
-    $image = file_get_contents($target_file);
+    $image_string = file_get_contents($target_file);
     
     unlink($target_file);
     $dic = file_get_contents("db/mMQDF_f_Passport_bottom_Gray.dic");
@@ -96,6 +96,7 @@
 	$ret = $engine->loadDB($dic, $dic1, $trained_data, $license);
 	
 	$strErr = $engine->getErrorMsg();
+
     if ($ret < 0)
     {
         //echo "<text>".$devinfo."<br />".$strErr."</text>";
@@ -110,15 +111,46 @@
         return;
     }
 
-    $ret = $engine->doRecognize($image);//image
+
+    $image = imagecreatefromstring($image_string);
+    
+
+    $width = imagesx($image);
+    $height = imagesy($image);
+
+    //$colors = array();
+    $str = "";
+    for ($y = 0; $y < $height; $y++) {
+   	//$y_array = array();
+	for ($x = 0; $x < $width; $x++) {
+		$rgb = imagecolorat($image, $x, $y);
+		$b = ($rgb >> 16) & 0xFF;
+		$g = ($rgb >> 8) & 0xFF;
+		$r = $rgb & 0xFF;
+		//$x_array = array($r, $g, $b);
+		$str.= chr($r).chr($g).chr($b);
+		//$str.= strval($r).",".strval($g).",".strval($b).",";
+		//$y_array[] = $x_array;
+	}
+	//$colors[] = $y_array;
+    }
+
+	//echo "<text>"."result = ".$str."</text>";
+	//return;	
+
+    $ret = $engine->doRecognize($str, $width, $height);//image
+
+
 
     if ($ret <= 0)
     {
-        $result_face = $engine->getFaceImage(); //face image
-        $result_img = $engine->getCardImage();
+        //$result_face = $engine->getFaceImage(); //face image
+        //$result_img = $engine->getCardImage();
         echo "<text>"."Failed to recognize"."</text>";
-    	echo "<face>"."data:image/jpg;base64,".base64_encode($result_face)."</face>";
-    	echo "<card>"."data:image/jpg;base64,".base64_encode($result_img)."</card>";
+    	//echo "<face>"."data:image/jpg;base64,".base64_encode($result_face)."</face>";
+    	//echo "<card>"."data:image/jpg;base64,".base64_encode($result_img)."</card>";
+	echo "<face>"."data:image/jpeg;base64,".base64_encode(buildImage($engine->getFaceImage(), $engine->getFaceWidth(), $engine->getFaceHeight()))."</face>";
+    	echo "<card>"."data:image/jpg;base64,".base64_encode(buildImage($engine->getCardImage(), $engine->getCardWidth(), $engine->getCardHeight()))."</card>";
         return;
     }
     //echo 'success to recognize';
@@ -128,6 +160,10 @@
     $replace = '<br />';
     $result_rep = str_replace($order, $replace, $result);
     $res_obj = json_decode($result_rep);
+
+    //echo "<text>".$result."</text>";
+    //return;
+
     //var_dump($res_obj);
     /*
     switch (json_last_error()) {
@@ -164,7 +200,10 @@
         $parse_text = parse_aadhar($res_obj);
     else if ($card_type == 'INDIA PASSPORT (Back)')
     	$parse_text = parse_india_passport($res_obj);
-    	
+
+  	
+
+
     $result_list = explode("\n", $parse_text);
     $result_text ="";
     foreach($result_list as &$item){
@@ -173,19 +212,43 @@
         $result_text .= "<br>";
     }
 
-    $result_face = $engine->getFaceImage(); //face image
-    $result_img = $engine->getCardImage(); //card image
-    echo "<face>"."data:image/jpg;base64,".base64_encode($result_face)."</face>";
-    echo "<card>"."data:image/jpg;base64,".base64_encode($result_img)."</card>";
+//    $result_face = $engine->getFaceImage(); //face image
+//    $result_img = $engine->getCardImage(); //card image
+//    echo "<face>"."data:image/jpg;base64,".base64_encode($result_face)."</face>";
+//    echo "<card>"."data:image/jpg;base64,".base64_encode($result_img)."</card>";
+
+	
+    echo "<face>"."data:image/jpeg;base64,".base64_encode(buildImage($engine->getFaceImage(), $engine->getFaceWidth(), $engine->getFaceHeight()))."</face>";
+    echo "<card>"."data:image/jpg;base64,".base64_encode(buildImage($engine->getCardImage(), $engine->getCardWidth(), $engine->getCardHeight()))."</card>";
     //echo "<text>".$devinfo."<br>".$result_text."</text>";
     //echo "<text>".$result_text."<br />".$strErr."</text>";
     echo "<text>".$result_text."</text>";
-
+    
 	$result_text = null;
 	$result_face = null;
 	$result_img = null;
+return;
 	$engine->freeEngine();
 	$engine = null;
+
+    function buildImage($colors, $width, $height)
+    {
+	$im = imagecreatetruecolor($width, $height);
+	
+	for ($y = 0; $y < $height; $y++) {
+	    for ($x = 0; $x < $width; $x++) {
+		$idx = ($y*$width + $x)*3;
+		$colorItem = imagecolorallocate($im, ord(substr($colors, $idx+2, 1)), ord(substr($colors, $idx+1, 1)), ord(substr($colors, $idx, 1)));
+		imagesetpixel($im, $x, $y, $colorItem);
+	    }
+	}
+
+	ob_start(); 					// Let's start output buffering.
+	    imagejpeg($im); 				//This will normally output the image, but because of ob_start(), it won't.
+	    $contents = ob_get_contents(); 		//Instead, output above is saved to $contents
+	ob_end_clean(); 				//End the output buffer.
+	return $contents;
+    }
 
     function parse_passport($arg, $flag)
     {
