@@ -29,14 +29,15 @@
                 </div>
             </div>
             <div class="form-group">
-                <label for="card_type">Card Type:</label>
-                <select class="form-control" id="card_type" name="card_type">
+                <input type="hidden" name="card_type" id="card_type" value="Passport & ID Card (MRZ)">
+                <!-- <label for="card_type">Card Type:</label> -->
+                <!-- <select class="form-control" id="card_type" name="card_type">
                  <option>Passport & ID Card (MRZ)</option>
 				 <option>PAN CARD INDIA</option>
                  <option>AADHAR CARD INDIA (Front)</option>
 				 <option>AADHAR CARD INDIA (Back)</option>
                  <option>INDIA PASSPORT (Back)</option>
-                </select>
+                </select> -->
             </div>
             <!-- COMPONENT END -->
             <div class="form-group">
@@ -51,7 +52,7 @@
         <div id="image_view" style="visibility: hidden;">
         	<img id="im_face" name="im_face" style="max-width: 100%; max-height: 100%;">
         </div>
-        <div id="result_content"></div>
+        <div id="result_content" style="font-family: Tahoma;"></div>
         <div id="card_view" style="visibility: hidden;">
         	<img id="im_card" name="im_card" style="max-width: 100%; max-height: 100%;">
         </div>

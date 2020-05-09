@@ -268,6 +268,8 @@ return;
         $otherid = $arg->{'PersonalNumber'}; //Personal Number
         $otheridchecksum = $arg->{'PersonalNumberCheck'}; //Personal Number Check
         $secondrowchecksum = $arg->{'SecondRowCheckNumber'}; //SecondRow Check Number
+	$issuedate = $arg->{'IssueDate'};
+	$departmentnumber = $arg->{'DepartmentNumber'};
 
     	if ($flag > 1)
     		$mrz_result = "Incorrect Document \n";
@@ -287,7 +289,9 @@ return;
         $mrz_result .= "Sex : ".$sex."\n";
         $mrz_result .= "Expiry Date: ".$expirationdate."\n";
         $mrz_result .= "Expiration Check Number: ".$expirationchecksum."\n";
-       
+       	$mrz_result .= "Issue Date: ".$issuedate."\n";
+	$mrz_result .= "Department Number : ".$departmentnumber."\n";
+
         $mrz_result .= "Other ID : ".$otherid."\n";
         $mrz_result .= "Other ID Check: ".$otheridchecksum."\n";
         $mrz_result .= "Second Row Check Number: ".$secondrowchecksum."\n";
