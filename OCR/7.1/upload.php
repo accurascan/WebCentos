@@ -43,6 +43,29 @@
         return;
     // if everything is ok, try to upload file
     }
+        // $img_width_height = getimagesize($target_file);
+        // $img_width = $img_width_height[0];
+        // $img_height = $img_width_height[1];
+
+        // if($img_width > 1000 OR $img_height > 1000){
+        //   $new_height = $img_width/$img_height;
+        //   $width = 1000;
+        //   $height = 1000/$new_height;
+        //   if($img_width > 1000 OR $img_height > 1000){
+        //       $new_height = $img_width/$img_height;
+        //       $width = 900;
+        //       $height = 900/$new_height;
+        //   }
+
+        //   if($imageFileType == "png"){
+        //     resize_imagepng($target_file, $width, $height);
+        //   }else if($imageFileType == "jpeg"){
+        //     resize_imagejpeg($target_file, $width, $height); 
+        //   }else if($imageFileType == "jpg"){
+        //     resize_imagejpg($target_file, $width, $height); 
+        //   }
+           
+        // }
 
     //upload image
     if (!move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
@@ -74,7 +97,7 @@
     $license = file_get_contents("db/key.license");
    // $fdata_path = realpath("db/fdata.nn");
 
-    if (!extension_loaded("cardrec"))
+    if (!extension_loaded("accuraMRZ"))
     {
         echo "<text>"."cardrec extension not loaded"."</text>";
         return;
@@ -82,7 +105,7 @@
     
     gc_enable();
 
-    $engine = new Cardrec($card_type_id);
+    $engine = new \Mrz($card_type_id);
 
     if ($license == null)
     {
@@ -110,7 +133,6 @@
         	
         return;
     }
-
 
     $image = imagecreatefromstring($image_string);
     
@@ -140,9 +162,7 @@
 
     $ret = $engine->doRecognize($str, $width, $height);//image
 
-
-
-    if ($ret <= 0)
+    if ($ret < 0)
     {
         //$result_face = $engine->getFaceImage(); //face image
         //$result_img = $engine->getCardImage();
@@ -156,6 +176,7 @@
     //echo 'success to recognize';
 
     $result = $engine->getResult(); //recognition result string
+    // print_r("<text>".$result."</text>");
     $order   = array("\r\n", "\n", "\r");
     $replace = '<br />';
     $result_rep = str_replace($order, $replace, $result);
@@ -200,8 +221,6 @@
         $parse_text = parse_aadhar($res_obj);
     else if ($card_type == 'INDIA PASSPORT (Back)')
     	$parse_text = parse_india_passport($res_obj);
-
-  	
 
 
     $result_list = explode("\n", $parse_text);
@@ -258,43 +277,88 @@ return;
         $surname = $arg->{'Surname'};
         $givenname = $arg->{'Givename'};
         $docnumber = $arg->{'DocNumber'}; //Passport Number
-        $passportchecksum = $arg->{'CheckNumber'}; //Check Number
+        $passportchecksum = $arg->{'DocNumberCheckNumber'}; //Check Number
+        $correctpassportnumber = $arg->{'CorrectDocNumberCheckNumber'}; //CorrectDocNumberCheckNumber
         $nationality = $arg->{'Nationality'};
         $birth = $arg->{'Birth'};
         $birthchecksum = $arg->{'BirthCheckNumber'};//Birth Check Number
+        $correctbirthchecksum = $arg->{'CorrectBirthCheckNumber'};//CorrectBirth Check Number
         $sex = $arg->{'Sex'};
         $expirationdate = $arg->{'ExpirationDate'}; //Expiration Date
         $expirationchecksum = $arg->{'ExpirationCheckNumber'}; //Expiration Check Number
+        $correctexpirationchecksum = $arg->{'CorrectExpirationCheckNumber'}; //CorrectExpiration Check Number
         $otherid = $arg->{'PersonalNumber'}; //Personal Number
-        $otheridchecksum = $arg->{'PersonalNumberCheck'}; //Personal Number Check
+        $otheridchecksum = $arg->{'PersonalCheckNumber'}; //Personal Number Check
+        $correctotheridchecksum = $arg->{'CorrectPersonalCheckNumber'}; //CorrectPersonal Number Check
         $secondrowchecksum = $arg->{'SecondRowCheckNumber'}; //SecondRow Check Number
-	$issuedate = $arg->{'IssueDate'};
-	$departmentnumber = $arg->{'DepartmentNumber'};
 
-    	if ($flag > 1)
-    		$mrz_result = "Incorrect Document \n";
-    	else if($flag == 1)
-    		$mrz_result = "Correct Document \n";
+        $correctsecondrowchecksum = $arg->{'CorrectSecondRowCheckNumber'}; //CorrectSecondRow Check Number
+    	$issuedate = $arg->{'IssueDate'};
+    	$departmentnumber = $arg->{'DepartmentNumber'};
+
+    	$incorrect_msg = [];
+        if($passportchecksum != $correctpassportnumber){
+            $incorrect_msg[] = "Incorrect Document Check Number";
+            $flag = 0;
+        }
+        if($birthchecksum != $correctbirthchecksum){
+            $incorrect_msg[]= "Incorrect Birth Check Number";
+            $flag = 0;
+        }
+        if($expirationchecksum != $correctexpirationchecksum){
+            $incorrect_msg[] = "Incorrect Expiry Check Number";
+            $flag = 0;
+        }
+        if($secondrowchecksum != $correctsecondrowchecksum){
+            $incorrect_msg[] = "Incorrect Second Row Check Number";
+            $flag = 0;
+        }
+
     	
         $mrz_result .= "MRZ : ".$lines."\n";
         $mrz_result .= "Document Type : ".$doctype."\n";
         $mrz_result .= "Country : ".$country."\n";
-        $mrz_result .= "Surname : ".$surname."\n";
-        $mrz_result .= "Given Names : ".$givenname."\n";
+        $mrz_result .= "Last Name : ".$surname."\n";
+        $mrz_result .= "First Names : ".$givenname."\n";
         $mrz_result .= "Document No: ".$docnumber."\n";
         $mrz_result .= "Document Check Number: ".$passportchecksum."\n";
+        $mrz_result .= "Correct Document Check Number: ".$correctpassportnumber."\n";
+        if($otherid != "" && $country == "ESP"){
+            $mrz_result .= "dni: ".$otherid."\n";
+        }
         $mrz_result .= "Nationality: ".$nationality."\n";
-        $mrz_result .= "Birth Date: ".$birth."\n";
+        $mrz_result .= "Date of Birth: ".$birth."\n";
         $mrz_result .= "Birth Check Number: ".$birthchecksum."\n";
+        $mrz_result .= "Correct Birth Check Number: ".$correctbirthchecksum."\n";
         $mrz_result .= "Sex : ".$sex."\n";
-        $mrz_result .= "Expiry Date: ".$expirationdate."\n";
-        $mrz_result .= "Expiration Check Number: ".$expirationchecksum."\n";
-       	$mrz_result .= "Issue Date: ".$issuedate."\n";
-	$mrz_result .= "Department Number : ".$departmentnumber."\n";
+        $mrz_result .= "Date of Expiry: ".$expirationdate."\n";
+        $mrz_result .= "Expiry Check Number: ".$expirationchecksum."\n";
+
+        $mrz_result .= "Correct Expiry Check Number: ".$correctexpirationchecksum."\n";
+        if(strtoupper($country) =="RUS" or strtoupper($country) == "KAZ"){
+            $mrz_result .= "Issue Date: ".$issuedate."\n";
+            $mrz_result .= "Department Number : ".$departmentnumber."\n";
+        }       	
 
         $mrz_result .= "Other ID : ".$otherid."\n";
         $mrz_result .= "Other ID Check: ".$otheridchecksum."\n";
+        // $mrz_result .= "Correct Other ID Check: ".$correctotheridchecksum."\n";
+
         $mrz_result .= "Second Row Check Number: ".$secondrowchecksum."\n";
+        $mrz_result .= "Correct Second Row Check Number: ".$correctsecondrowchecksum."\n";
+
+        if ($flag == 0){
+            $mrz_result .= "Result : Incorrect MRZ \n";
+            // $mrz_result = "Incorrect Document \n";
+        }else if($flag == 1){
+            $mrz_result .= "Result : Correct MRZ \n";
+            // $mrz_result = "Correct Document \n";
+        }
+
+        if($flag == 0){
+           $mrz_result .=  "Details: ".implode(",",$incorrect_msg)."\n";
+        }
+
 	    $mrz_result .= "Flag: ".$flag;
 
         $order   = "<br />";
