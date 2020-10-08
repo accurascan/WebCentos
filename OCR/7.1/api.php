@@ -10,7 +10,7 @@ if($serverMethod == 'POST'){
 
     $headerAuth = getallheaders();
 
-    if($headerAuth['Api-Key']=="d2ef76102412c7aea7b61484557518ef"){ 
+    if($headerAuth['api-key']=="d2ef76102412c7aea7b61484557518ef"){ 
 
         $target_dir = "uploads/";
     $target_file = $target_dir . basename($_FILES["file"]["name"]);
@@ -35,12 +35,12 @@ if($serverMethod == 'POST'){
     //    $uploadOk = 0;
     //}
     // Check file size
-    if ($_FILES["fileToUpload"]["size"] > 100000000) {
-        http_response_code(400);
-        $response = array("responseType"=>"Error","response"=>"File size is too large");
-        echo json_encode($response);
+        if ($_FILES["file"]["size"] > 100000000) {
+
+        echo "<text>"."Sorry, your file is too large."."</text>";exit();
         return;
     }
+    
     // Allow certain file formats
     if($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg"
         && $imageFileType != "gif" ) {
@@ -87,7 +87,7 @@ if($serverMethod == 'POST'){
     $license = file_get_contents("db/key.license");
    // $fdata_path = realpath("db/fdata.nn");
 
-    if (!extension_loaded("cardrec"))
+    if (!extension_loaded("accuraMRZ"))
     {
         http_response_code(500);
         $response = array("responseType"=>"Error","response"=>"Failed to load CARDREC extension.");
@@ -97,7 +97,7 @@ if($serverMethod == 'POST'){
     
     gc_enable();
 
-    $engine = new Cardrec($card_type_id);
+    $engine = new \Mrz($card_type_id);
 
     if ($license == null)
     {
@@ -130,8 +130,34 @@ if($serverMethod == 'POST'){
         }	
         return;
     }
+    
+    $image = imagecreatefromstring($image);
+    
 
-    $ret = $engine->doRecognize($image);//image
+    $width = imagesx($image);
+    $height = imagesy($image);
+
+    //$colors = array();
+    $str = "";
+    for ($y = 0; $y < $height; $y++) {
+    //$y_array = array();
+    for ($x = 0; $x < $width; $x++) {
+        $rgb = imagecolorat($image, $x, $y);
+        $b = ($rgb >> 16) & 0xFF;
+        $g = ($rgb >> 8) & 0xFF;
+        $r = $rgb & 0xFF;
+        //$x_array = array($r, $g, $b);
+        $str.= chr($r).chr($g).chr($b);
+        //$str.= strval($r).",".strval($g).",".strval($b).",";
+        //$y_array[] = $x_array;
+    }
+    //$colors[] = $y_array;
+    }
+
+    //echo "<text>"."result = ".$str."</text>";
+    //return;   
+
+    $ret = $engine->doRecognize($str, $width, $height);//image
 
     if ($ret <= 0)
     {
@@ -196,7 +222,7 @@ if($serverMethod == 'POST'){
 }
 
 function parse_passport($arg, $flag)
-    {
+{
         
         $lines = str_replace("&lt;","<",$arg->{'Lines'});
         $doctype = $arg->{'DocType'};
@@ -204,7 +230,7 @@ function parse_passport($arg, $flag)
         $surname = $arg->{'Surname'};
         $givenname = $arg->{'Givename'};
         $docnumber = $arg->{'DocNumber'}; //Passport Number
-        $passportchecksum = $arg->{'CheckNumber'}; //Check Number
+        $passportchecksum = $arg->{'CheckNumber'} ?? ''; //Check Number
         $nationality = $arg->{'Nationality'};
         $birth = $arg->{'Birth'};
         $birthchecksum = $arg->{'BirthCheckNumber'};//Birth Check Number
@@ -212,7 +238,7 @@ function parse_passport($arg, $flag)
         $expirationdate = $arg->{'ExpirationDate'}; //Expiration Date
         $expirationchecksum = $arg->{'ExpirationCheckNumber'}; //Expiration Check Number
         $otherid = $arg->{'PersonalNumber'}; //Personal Number
-        $otheridchecksum = $arg->{'PersonalNumberCheck'}; //Personal Number Check
+        $otheridchecksum = $arg->{'PersonalNumberCheck'} ?? ''; //Personal Number Check
         $secondrowchecksum = $arg->{'SecondRowCheckNumber'}; //SecondRow Check Number
         
         
