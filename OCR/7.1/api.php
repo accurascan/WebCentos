@@ -1,5 +1,6 @@
 <?php
 
+
 header("Access-Control-Allow-Orgin: *");
 header("Access-Control-Allow-Methods: *");
 header("Content-Type: application/json");
@@ -66,7 +67,8 @@ if($serverMethod == 'POST'){
         return;
     }
 
-    $card_type = $_POST['cardType'];
+    // $card_type = $_POST['cardType'];
+    $card_type = 1;
     $card_type_id = -1;
     if ($card_type == '2')
         $card_type_id = 0;
@@ -79,6 +81,7 @@ if($serverMethod == 'POST'){
         $card_type_id = 2;
 
     //image load
+
     $image = file_get_contents($target_file);
     unlink($target_file);
     $dic = file_get_contents("db/mMQDF_f_Passport_bottom_Gray.dic");
@@ -162,16 +165,24 @@ if($serverMethod == 'POST'){
     if ($ret <= 0)
     {
         $result_face = $engine->getFaceImage(); //face image
+        $result_face = "data:image/jpg;base64,".base64_encode($result_face);
         $result_img = $engine->getCardImage();
+        $result_img = "data:image/jpg;base64,".base64_encode($result_img);
+        // echo $result_img;
         //echo "<text>"."Failed to recognize"."</text>";
-    	//echo "<face>"."data:image/jpg;base64,".base64_encode($result_face)."</face>";
+    	// echo "<face>"."data:image/jpg;base64,".base64_encode($result_face)."</face>";
+        // return;
     	//echo "<card>"."data:image/jpg;base64,".base64_encode($result_img)."</card>";
     	http_response_code(400);
-        $response = array("responseType"=>"Error","response"=>array("message"=>"Failed to recognize","face"=>$result_face,"card"=>$result_img));
-        echo json_encode($response);
+
+        $response = array("responseType"=>"Error","response"=>array("message"=>"Failed to recognize","face"=>$result_face));
+        $response = json_encode($response);
+        echo $response;
+
         return;
     }
-    //echo 'success to recognize';
+    // echo 'success to recognize';
+    // die();
 
     $result = $engine->getResult(); //recognition result string
     $order   = array("\r\n", "\n", "\r","");
@@ -272,6 +283,7 @@ function parse_passport($arg, $flag)
             "flag"=>$flag,
             "image"=>'',
         );
+
         return $res;
     }
 
